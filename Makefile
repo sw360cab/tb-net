@@ -8,13 +8,21 @@ LINK       ?= tcp
 MODE       ?= rtt
 CGO_ENABLED?= 0
 GOLANGCI_VERSION ?= v2.13.2
+GOLANGCI   ?= $(OUT)/golangci-lint
 CMDS       := $(notdir $(wildcard cmd/*))
 SUDO       ?= $(shell [ "$$(id -u)" = 0 ] || echo sudo)
 IMAGE      ?= tbnet
 DOCKER_TTY := $(shell [ -t 0 ] && echo -it)
 CMD        ?= bash
+VM         ?= tbnet
+VM_SOCK    := $(HOME)/.lima/$(VM)/sock/docker.sock
 
-.PHONY: all build test lint lint-fix fmt bench plot env-local-up env-local-down docker-build docker-test docker-bench dev clean
+# docker-* targets use the Lima VM's daemon when it is up (macOS), else the default one (CI)
+ifneq ($(wildcard $(VM_SOCK)),)
+export DOCKER_HOST ?= unix://$(VM_SOCK)
+endif
+
+.PHONY: all build test lint lint-fix fmt bench plot env-local-up env-local-down docker-build docker-test docker-bench dev vm-up vm-down clean
 
 all: build
 
@@ -27,12 +35,12 @@ $(OUT)/%: cmd/% $(shell find . -name '*.go' 2>/dev/null)
 test:
 	$(GO) test -v -race ./...
 
-lint: $(OUT)/golangci-lint
+lint: $(GOLANGCI)
 	$(GO) vet ./...
-	$(OUT)/golangci-lint run
+	$(GOLANGCI) run
 
-lint-fix: $(OUT)/golangci-lint
-	$(OUT)/golangci-lint run --fix
+lint-fix: $(GOLANGCI)
+	$(GOLANGCI) run --fix
 
 # pinned, installed outside the module so go.mod stays dependency-free
 $(OUT)/golangci-lint:
@@ -55,7 +63,7 @@ env-local-down:
 	$(SUDO) env/local/down.sh
 
 docker-build:
-	docker build -t $(IMAGE) .
+	docker build --build-arg GOLANGCI_VERSION=$(GOLANGCI_VERSION) -t $(IMAGE) .
 
 # compile, bring up env/local, run tests: all inside Linux
 docker-test: docker-build
@@ -70,6 +78,14 @@ docker-bench: docker-build
 # Linux root shell on the live source tree, e.g. make dev CMD="make lint"
 dev: docker-build
 	docker run --rm $(DOCKER_TTY) --privileged -v $(CURDIR):/src $(IMAGE) $(CMD)
+
+# macOS: Lima VM with a stock kernel (userfaultfd, KVM) running the Docker daemon
+vm-up:
+	@if limactl list -q 2>/dev/null | grep -qx $(VM); then limactl start -y $(VM); \
+	else limactl start -y --name=$(VM) --mount-only=$(CURDIR):w env/local/lima.yaml; fi
+
+vm-down:
+	limactl stop $(VM)
 
 clean:
 	rm -rf out

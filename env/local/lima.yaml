@@ -1,0 +1,12 @@
+# Lima VM for tb-net on macOS: stock Ubuntu LTS kernel (userfaultfd, >= 6.6),
+# nested KVM for Firecracker, and its own rootful Docker daemon that the
+# make docker-* targets use. Created by `make vm-up`, which mounts the repo
+# writable at the same path so docker bind mounts resolve inside the VM.
+minimumLimaVersion: 2.0.0
+base:
+- template:docker-rootful
+vmType: vz
+nestedVirtualization: true
+cpus: 4
+memory: 12GiB
+disk: 40GiB

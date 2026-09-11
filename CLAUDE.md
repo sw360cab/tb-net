@@ -93,6 +93,7 @@ farmem/
     plot.py          results → PNG (matplotlib only)
   docs/              decisions.md  (one paragraph per decision, dated)
   Makefile           build test lint bench push
+  Dockerfile         base → build (compile, vet, lint) → test (run --privileged)
 ```
 
 ## 5. Environments
@@ -106,6 +107,11 @@ farmem/
 Every command takes `-env <name>`; env files define addresses, interface names,
 MTU, memsrv size. `local` must always work with no hardware and no root beyond
 `ip netns`. If a change breaks `local`, it does not merge.
+
+Dev machine is macOS: everything runs in Linux containers (`make docker-test`,
+`make dev`, `make docker-bench`) against the Docker daemon of a Lima VM
+(`make vm-up`), because Docker Desktop's kernel has no userfaultfd or KVM.
+See `docs/decisions.md`.
 
 Host prerequisites (record actual values in `env/tb/README.md`):
 kernel ≥ 6.6, `thunderbolt-net` loaded, `ip link set thunderbolt0 mtu 65520`,
@@ -166,24 +172,26 @@ Done when every box is checked or explicitly moved to Status as blocked.
 Goal: repo compiles, tests run, `local` env exists.
 
 Setup
-- [ ] `go mod init`, layout from §4, `.gitignore` (binaries, `bench/*.png` excluded, `bench/results/*.json` included)
-- [ ] `Makefile`: `build test lint env-local-up env-local-down`
+- [x] `go mod init`, layout from §4, `.gitignore` (binaries, `bench/*.png` excluded, `bench/results/*.json` included)
+- [x] `Makefile`: `build test lint env-local-up env-local-down`
+- [x] Dev on macOS: `Dockerfile`, `make docker-test`/`dev`/`docker-bench`, Lima VM via `make vm-up`
+- [ ] TB hardware pre-check on both hosts (show commands first): kernel ≥ 6.6, TB4/USB4 controller in `lspci`, `modprobe thunderbolt-net`, `thunderbolt0` appears with the cable in; record in `env/tb/README.md`
 
 `internal/proto`
-- [ ] Header struct + `Encode`/`Decode` (32 bytes, little-endian, CRC over header)
-- [ ] Op constants `PING PONG GET GETR PUT PUTA`, error flag bit
-- [ ] Table-driven round-trip tests; fuzz test on `Decode`
+- [x] Header struct + `Encode`/`Decode` (32 bytes, little-endian, CRC-32C over bytes 0..27)
+- [x] Op constants `PING PONG GET GETR PUT PUTA`, error flag bit
+- [x] Table-driven round-trip tests; fuzz test on `Decode`
 
 `internal/link`
-- [ ] `Link` interface as in §3, doc comment stating the 4 KB contract
+- [x] `Link` interface as in §3, doc comment stating the 4 KB contract
 
 `env/local`
-- [ ] Script: two netns `fa`/`fb`, veth pair, 10.99.0.1/2, MTU configurable
-- [ ] `make env-local-up` idempotent; `-down` cleans fully
+- [x] Script: two netns `fa`/`fb`, veth pair, 10.99.0.1/2, MTU configurable (`env/local/env.conf`)
+- [x] `make env-local-up` idempotent; `-down` cleans fully
 
 Close
 - [ ] CI script runs `make test lint`; green
-- [ ] `docs/decisions.md` created with entry: "custom wire protocol vs NBD" (see §3 note)
+- [x] `docs/decisions.md` created with entry: "custom wire protocol vs NBD" (see §3 note)
 - [ ] Update Status
 
 ### Day 2 — tcp link + memsrv
@@ -226,7 +234,7 @@ Goal: one command produces a comparable JSON result.
 - [ ] Modes `rtt`, `get_seq`, `get_rand`, `put_seq`
 - [ ] Latency histogram (HDR-style or sorted slice) → p50/p90/p99/p999/max
 - [ ] JSON exactly per §6; `git` field from `git rev-parse --short HEAD`
-- [ ] Refuse to run if working tree is dirty (results must map to a commit)
+- [ ] Refuse to run if working tree is dirty (results must map to a commit); ignore `bench/results/` itself, or the first result blocks the next run
 
 `bench/plot.py`
 - [ ] Reads all JSON in `bench/results/`, one PNG per mode, series = env×link
@@ -237,7 +245,7 @@ Tests
 - [ ] Unit test that JSON output validates against §6 field list
 
 Verify on `local`
-- [ ] Run all four modes; commit results + PNG
+- [ ] Run all four modes via `make docker-bench`; commit results + PNG
 
 Close
 - [ ] Update Status
@@ -271,7 +279,7 @@ Hardening
 - [ ] `/debug` HTTP: counters (requests, errors, bytes), `pprof`
 - [ ] `-timeout` flag threaded through `ctx`
 
-Optional (only if above is done)
+Baseline (required: the Day 15 report must compare against it)
 - [ ] `cmd/nbdsrv` on an existing Go NBD library, exporting the same buffer
 - [ ] On A: `nbd-client`, `mkswap`, `swapon`; run a memory hog under `systemd-run -p MemoryMax=…`
 - [ ] Record throughput as the "no custom kernel code" baseline
