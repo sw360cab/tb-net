@@ -1,0 +1,6 @@
+*.ini
+.env
+out/
+
+bench/*.png
+!bench/results/*.json
