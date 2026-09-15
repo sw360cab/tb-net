@@ -89,8 +89,9 @@ farmem/
   env/               local/  lan/  tb/   (config + how to bring each up)
   deploy/            push.sh  memsrv.service  pager.service  firecracker/
   bench/
-    results/         YYYY-MM-DD-<env>-<link>-<git>.json   (committed)
-    plot.py          results → PNG (matplotlib only)
+    results/         YYYY-MM-DD-<env>-<link>-<git>-<mode>-<HHMMSS>.json   (committed)
+    plots/           <mode>.png from plot.py   (committed)
+    plot.py          results → PNG (matplotlib only; make docker-plot)
   docs/              decisions.md  (one paragraph per decision, dated)
   Makefile           build test lint bench push
   Dockerfile         base → build (compile, vet, lint) → test (run --privileged)
@@ -180,6 +181,17 @@ number; see decisions).
 Open: commit Day 2 work; CI still not run on GitHub (no remote); TB hardware
 pre-check on both hosts still pending.
 
+**2026-09-15 — Day 3 done, on branch `day3`.**
+Shipped: `internal/bench` (nearest-rank percentiles, §6 `Result` writer, git
+commit and dirty checks, `rtt`/`get_seq`/`get_rand`/`put_seq` runners) with
+tests; `cmd/farbench`; `bench/plot.py` → `bench/plots/<mode>.png`;
+`make docker-bench` (farbench in `fa` vs memsrv in `fb` via `env/local/run.sh`)
+and `make docker-plot`. First results at 1a32c5f, local/tcp: p50 ~69–71 µs,
+p99 ~111–129 µs, ~55 MB/s for every mode (VM veth baseline). Filename, plots
+location and unit choices in decisions.
+Open: merge `day3`; CI still not run on GitHub (no remote); TB hardware
+pre-check on both hosts still pending.
+
 ---
 
 ## 8. Three-week plan — 15 sessions × 3–4 h
@@ -267,29 +279,29 @@ Goal: one command produces a comparable JSON result.
 
 `cmd/farbench`
 
-- [ ] Flags: `-env`, `-link`, `-mode`, `-pages`, `-out bench/results/`
-- [ ] Modes `rtt`, `get_seq`, `get_rand`, `put_seq`
-- [ ] Latency histogram (HDR-style or sorted slice) → p50/p90/p99/p999/max
-- [ ] JSON exactly per §6; `git` field from `git rev-parse --short HEAD`
-- [ ] Refuse to run if working tree is dirty (results must map to a commit); ignore `bench/results/` itself, or the first result blocks the next run
+- [x] Flags: `-env`, `-link`, `-mode` (comma list or `all`), `-pages`, `-out bench/results/`
+- [x] Modes `rtt`, `get_seq`, `get_rand`, `put_seq`
+- [x] Latency histogram (sorted slice, nearest rank) → p50/p90/p99/p999/max
+- [x] JSON exactly per §6; `git` field from `git rev-parse --short HEAD`
+- [x] Refuse to run if working tree is dirty (results must map to a commit); ignore `bench/results/` itself, or the first result blocks the next run
 
 `bench/plot.py`
 
-- [ ] Reads all JSON in `bench/results/`, one PNG per mode, series = env×link
-- [ ] matplotlib only; runs with `make plot`
+- [x] Reads all JSON in `bench/results/`, one PNG per mode (`bench/plots/`), series = env×link
+- [x] matplotlib only; runs with `make plot` (`make docker-plot` on the Mac)
 
 Tests
 
-- [ ] Unit test for percentile math on a known distribution
-- [ ] Unit test that JSON output validates against §6 field list
+- [x] Unit test for percentile math on a known distribution
+- [x] Unit test that JSON output validates against §6 field list
 
 Verify on `local`
 
-- [ ] Run all four modes via `make docker-bench`; commit results + PNG
+- [x] Run all four modes via `make docker-bench`; commit results + PNG
 
 Close
 
-- [ ] Update Status
+- [x] Update Status
 
 #### Day 4 — deploy + first real hosts
 

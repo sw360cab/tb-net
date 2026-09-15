@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Plot bench/results/*.json into bench/plots/<mode>.png (CLAUDE.md Day 3).
 
-One PNG per mode, one series per env x link, runs in date order. Left panel:
-p50 (solid) and p99 (dashed) latency in microseconds, log scale, each point
-labelled with its commit. Right panel, for modes that move pages: MB/s.
+One PNG per mode, one series per env x link. The x axis is runs in date
+order, labelled with date and commit: versions are what get compared, not
+calendar time. Left panel: p50 (solid) and p99 (dashed) latency in
+microseconds, log scale. Right panel, for modes that move pages: MB/s.
 matplotlib only.
 """
 import glob
@@ -17,6 +18,7 @@ import matplotlib
 
 matplotlib.use("Agg")  # no display in containers or CI
 import matplotlib.pyplot as plt  # noqa: E402
+from matplotlib.ticker import ScalarFormatter  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RESULTS = os.path.join(ROOT, "bench", "results")
@@ -39,22 +41,29 @@ def plot_mode(mode, runs):
     lat = axes[0][0]
     thr = axes[0][1] if moves else None
 
+    runs = sorted(runs, key=lambda r: r["when"])
+    for i, r in enumerate(runs):
+        r["x"] = i
     series = defaultdict(list)
-    for r in sorted(runs, key=lambda r: r["when"]):
+    for r in runs:
         series[(r["env"], r["link"])].append(r)
 
     for (env, link), rs in sorted(series.items()):
-        x = [r["when"] for r in rs]
+        x = [r["x"] for r in rs]
         label = f"{env}/{link}"
         (line,) = lat.plot(x, [r["lat_us"]["p50"] for r in rs], "o-", label=f"{label} p50")
         lat.plot(x, [r["lat_us"]["p99"] for r in rs], "s--", color=line.get_color(), label=f"{label} p99")
-        for r in rs:
-            lat.annotate(r["git"], (r["when"], r["lat_us"]["p50"]), textcoords="offset points",
-                         xytext=(0, 6), ha="center", fontsize=7)
         if thr is not None:
             thr.plot(x, [r["mbps"] for r in rs], "o-", color=line.get_color(), label=label)
 
+    ticks = [r["x"] for r in runs]
+    labels = [f'{r["when"]:%m-%d %H:%M}\n{r["git"]}' for r in runs]
+
     lat.set_yscale("log")
+    for axis in (lat.yaxis.set_major_formatter, lat.yaxis.set_minor_formatter):
+        fmt = ScalarFormatter()
+        fmt.set_scientific(False)
+        axis(fmt)
     lat.set_ylabel("latency per call (µs)")
     lat.set_title(f"farbench {mode}: latency")
     lat.legend(fontsize=8)
@@ -66,7 +75,9 @@ def plot_mode(mode, runs):
         thr.legend(fontsize=8)
         thr.grid(True, alpha=0.3)
     for ax in axes[0]:
-        ax.tick_params(axis="x", labelrotation=30, labelsize=8)
+        ax.set_xticks(ticks, labels, fontsize=8)
+        ax.set_xlim(-0.5, len(runs) - 0.5)
+        ax.margins(y=0.15)
 
     fig.tight_layout()
     path = os.path.join(PLOTS, f"{mode}.png")

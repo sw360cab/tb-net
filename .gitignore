@@ -4,3 +4,4 @@ out/
 
 bench/*.png
 !bench/results/*.json
+__pycache__/
