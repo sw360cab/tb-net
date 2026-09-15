@@ -6,7 +6,7 @@
 
 FROM golang:1.24.5-bookworm AS base
 RUN apt-get update \
- && apt-get install -y --no-install-recommends iproute2 iputils-ping \
+ && apt-get install -y --no-install-recommends iproute2 iputils-ping python3-matplotlib \
  && rm -rf /var/lib/apt/lists/*
 # bind-mounted repo is owned by the host user; let root's git read it
 RUN git config --system --add safe.directory /src

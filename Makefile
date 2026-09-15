@@ -6,7 +6,8 @@ PLATFORM   := $(shell $(GO) env GOOS 2>/dev/null)_$(shell $(GO) env GOARCH 2>/de
 OUT        ?= out/$(PLATFORM)
 ENV        ?= local
 LINK       ?= tcp
-MODE       ?= rtt
+MODE       ?= all
+PAGES      ?=
 CGO_ENABLED?= 0
 GOLANGCI_VERSION ?= v2.13.2
 GOLANGCI   ?= $(OUT)/golangci-lint
@@ -23,7 +24,7 @@ ifneq ($(wildcard $(VM_SOCK)),)
 export DOCKER_HOST ?= unix://$(VM_SOCK)
 endif
 
-.PHONY: all build test lint lint-fix fmt bench plot env-local-up env-local-down docker-build docker-test docker-bench docker-cli0 dev vm-up vm-down clean
+.PHONY: all build test lint lint-fix fmt bench plot env-local-up env-local-down docker-build docker-test docker-bench docker-plot docker-cli0 dev vm-up vm-down clean
 
 all: build
 
@@ -70,11 +71,17 @@ docker-build:
 docker-test: docker-build
 	docker run --rm --privileged $(IMAGE)
 
-# benchmarks run on the live tree: .git for farbench's SHA and dirty check,
-# and bench/results/ lands on the host
+# farbench in netns fa against memsrv in fb, on the live tree: .git for the
+# commit and dirty check, and bench/results/ lands on the host. Commit first.
+#   make docker-bench MODE=get_seq,get_rand PAGES=65536
 docker-bench: docker-build
 	docker run --rm --privileged -v $(CURDIR):/src $(IMAGE) \
-		make env-local-up bench ENV=$(ENV) LINK=$(LINK) MODE=$(MODE)
+		sh -c 'make -s build && env/local/run.sh out/$$(go env GOOS)_$$(go env GOARCH)/farbench \
+			-env local -link $(LINK) -mode $(MODE) $(if $(PAGES),-pages $(PAGES))'
+
+# bench/results/*.json -> bench/plots/<mode>.png, with the image's matplotlib
+docker-plot: docker-build
+	docker run --rm -v $(CURDIR):/src $(IMAGE) make plot
 
 # Day 2 check on local: cli0 in netns fa against memsrv in fb, 3 runs
 docker-cli0: docker-build
