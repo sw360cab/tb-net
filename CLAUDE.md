@@ -156,80 +156,117 @@ target here: p50 ≤ 15 µs per miss on `tb`, ≥ 2 GB/s sequential.
 
 ## Status
 
-_(update at the end of each session: date, what shipped, what is blocked)_
+> (update at the end of each session: date, what shipped, what is blocked)_
+
+**2026-09-11 — Day 1 done except the TB hardware pre-check.**
+Shipped: Makefile; `internal/proto` (header, ops, Encode/Decode; round-trip,
+golden, error, alloc and fuzz tests); `Link` interface; `env/local` netns
+scripts; multi-stage Dockerfile (`make docker-test` = compile + vet + lint +
+env + tests); Lima VM (`make vm-up`) with userfaultfd and KVM verified; CI
+workflow; `docs/decisions.md`.
+Open: TB hardware pre-check on both hosts (needs approval to run there); CI
+workflow not yet run on GitHub (no remote).
+
+**2026-09-15 — Day 2 done except the commit.**
+Shipped: `cmd/memsrv` + `internal/memsrv` (mmap'd, mlocked buffer; goroutine
+per connection; `FlagErr` for out-of-range pages; a malformed frame closes the
+connection; one log line per connection); `internal/env` (env.conf parser);
+`internal/link/tcp` Client (`Dial(ctx, addr)`, deadline from ctx, sticky
+broken-link error, mutex for concurrent callers, 0 allocs per call); tests for
+all Day 2 items plus concurrency, with Get/Put tests mutation-checked;
+`cmd/cli0` run from `fa` against memsrv in `fb`: 10k pages each way verified,
+~70–86 µs/page put and ~78 µs/page get (veth inside the Lima VM, a sanity
+number; see decisions).
+Open: commit Day 2 work; CI still not run on GitHub (no remote); TB hardware
+pre-check on both hosts still pending.
 
 ---
 
-# 8. Three-week plan — 15 sessions × 3–4 h
+## 8. Three-week plan — 15 sessions × 3–4 h
 
 Each day: same shape. Setup → build blocks → tests → verify → close.
 Every day ends by updating **Status** at the top of this file.
 Done when every box is checked or explicitly moved to Status as blocked.
 
-## Week 1 — transport, bench, ops (no faults yet)
+### Week 1 — transport, bench, ops (no faults yet)
 
-### Day 1 — skeleton
+#### Day 1 — skeleton
+
 Goal: repo compiles, tests run, `local` env exists.
 
 Setup
+
 - [x] `go mod init`, layout from §4, `.gitignore` (binaries, `bench/*.png` excluded, `bench/results/*.json` included)
 - [x] `Makefile`: `build test lint env-local-up env-local-down`
 - [x] Dev on macOS: `Dockerfile`, `make docker-test`/`dev`/`docker-bench`, Lima VM via `make vm-up`
 - [ ] TB hardware pre-check on both hosts (show commands first): kernel ≥ 6.6, TB4/USB4 controller in `lspci`, `modprobe thunderbolt-net`, `thunderbolt0` appears with the cable in; record in `env/tb/README.md`
 
 `internal/proto`
+
 - [x] Header struct + `Encode`/`Decode` (32 bytes, little-endian, CRC-32C over bytes 0..27)
 - [x] Op constants `PING PONG GET GETR PUT PUTA`, error flag bit
 - [x] Table-driven round-trip tests; fuzz test on `Decode`
 
 `internal/link`
+
 - [x] `Link` interface as in §3, doc comment stating the 4 KB contract
 
 `env/local`
+
 - [x] Script: two netns `fa`/`fb`, veth pair, 10.99.0.1/2, MTU configurable (`env/local/env.conf`)
 - [x] `make env-local-up` idempotent; `-down` cleans fully
 
 Close
-- [ ] CI script runs `make test lint`; green
-- [x] `docs/decisions.md` created with entry: "custom wire protocol vs NBD" (see §3 note)
-- [ ] Update Status
 
-### Day 2 — tcp link + memsrv
+- [x] CI script runs `make test lint`; green
+- [x] `docs/decisions.md` created with entry: "custom wire protocol vs NBD" (see §3 note)
+- [x] Update Status
+
+#### Day 2 — tcp link + memsrv
+
 Goal: a client in netns A can Get/Put pages from a memsrv in netns B.
 
 Setup
-- [ ] `git pull`, `make test` green, `make env-local-up` works
+
+- [x] `git pull`, `make test` green, `make env-local-up` works
 
 `cmd/memsrv`
-- [ ] Flags: `-listen`, `-size MB`, `-env`
-- [ ] Allocate `[]byte`, `mlock`, fail loudly if denied
-- [ ] Accept loop, goroutine per connection, dispatch GET/PUT/PING
-- [ ] Bounds check `page`; error flag rather than panic
-- [ ] One log line per connection, none per request
+
+- [x] Flags: `-listen`, `-size MB`, `-env`
+- [x] Allocate `[]byte`, `mlock`, fail loudly if denied
+- [x] Accept loop, goroutine per connection, dispatch GET/PUT/PING
+- [x] Bounds check `page`; error flag rather than panic
+- [x] One log line per connection, none per request
 
 `internal/link/tcp`
-- [ ] `Dial(addr, opts)`; single connection, `TCP_NODELAY`
-- [ ] `Get`/`Put`/`Ping`: write header, read reply, match `seq`
-- [ ] Deadline from `ctx`; timeout or seq mismatch → error, link marked broken
-- [ ] Zero allocations per call (check with `-benchmem`)
+
+- [x] `Dial(ctx, addr)` (no opts needed yet); single connection, `TCP_NODELAY`
+- [x] `Get`/`Put`/`Ping`: write header, read reply, match `seq`
+- [x] Deadline from `ctx`; timeout or seq mismatch → error, link marked broken
+- [x] Zero allocations per call (check with `-benchmem`)
 
 Tests
-- [ ] Loopback: in-process memsrv on `127.0.0.1:0`, 1k random pages Get/Put verified
-- [ ] Get of never-written page returns zeros
-- [ ] Out-of-range page → error, link still usable
-- [ ] Server closes → next call errors, no hang
-- [ ] `go test -race ./...` clean
+
+- [x] Loopback: in-process memsrv on `127.0.0.1:0`, 1k random pages Get/Put verified
+- [x] Get of never-written page returns zeros
+- [x] Out-of-range page → error, link still usable
+- [x] Server closes → next call errors, no hang
+- [x] `go test -race ./...` clean
 
 Verify on `local`
-- [ ] memsrv in `fb`; ad-hoc client in `fa` Gets/Puts 10k pages; note wall time in decisions
+
+- [x] memsrv in `fb`; ad-hoc client in `fa` Gets/Puts 10k pages; note wall time in decisions
 
 Close
+
 - [ ] Commit, CI green, update Status
 
-### Day 3 — farbench v1
+#### Day 3 — farbench v1
+
 Goal: one command produces a comparable JSON result.
 
 `cmd/farbench`
+
 - [ ] Flags: `-env`, `-link`, `-mode`, `-pages`, `-out bench/results/`
 - [ ] Modes `rtt`, `get_seq`, `get_rand`, `put_seq`
 - [ ] Latency histogram (HDR-style or sorted slice) → p50/p90/p99/p999/max
@@ -237,83 +274,102 @@ Goal: one command produces a comparable JSON result.
 - [ ] Refuse to run if working tree is dirty (results must map to a commit); ignore `bench/results/` itself, or the first result blocks the next run
 
 `bench/plot.py`
+
 - [ ] Reads all JSON in `bench/results/`, one PNG per mode, series = env×link
 - [ ] matplotlib only; runs with `make plot`
 
 Tests
+
 - [ ] Unit test for percentile math on a known distribution
 - [ ] Unit test that JSON output validates against §6 field list
 
 Verify on `local`
+
 - [ ] Run all four modes via `make docker-bench`; commit results + PNG
 
 Close
+
 - [ ] Update Status
 
-### Day 4 — deploy + first real hosts
+#### Day 4 — deploy + first real hosts
+
 Goal: same command runs on `local`, `lan`, `tb`.
 
 `deploy/`
+
 - [ ] `push.sh <host> <role>`: `CGO_ENABLED=0` build, rsync to `/opt/farmem`, install unit, restart
 - [ ] `memsrv.service` (Restart=always, `LimitMEMLOCK=infinity`)
 - [ ] `env/lan/`, `env/tb/` configs (addresses, interface, MTU, size)
 
 Hosts (show commands before running)
+
 - [ ] `modprobe thunderbolt-net` on one host; confirm `thunderbolt0` on both
 - [ ] `ip link set thunderbolt0 mtu 65520 up` both sides; static IPs from `env/tb`
 - [ ] Record kernel, controller, MTU actually accepted in `env/tb/README.md`
 
 Verify
+
 - [ ] farbench all modes on `lan` and `tb`; commit results
 - [ ] Numbers into `docs/decisions.md`: RTT and MB/s per env
 
 Close
+
 - [ ] Update Status
 
-### Day 5 — hardening + optional baseline
+#### Day 5 — hardening + optional baseline
+
 Goal: `v0.1`; memsrv survives a week unattended.
 
 Hardening
+
 - [ ] tcp link: reconnect with backoff; in-flight call returns error, next call retries
 - [ ] Graceful shutdown on SIGTERM both binaries
 - [ ] `/debug` HTTP: counters (requests, errors, bytes), `pprof`
 - [ ] `-timeout` flag threaded through `ctx`
 
 Baseline (required: the Day 15 report must compare against it)
+
 - [ ] `cmd/nbdsrv` on an existing Go NBD library, exporting the same buffer
 - [ ] On A: `nbd-client`, `mkswap`, `swapon`; run a memory hog under `systemd-run -p MemoryMax=…`
 - [ ] Record throughput as the "no custom kernel code" baseline
 
 Close
+
 - [ ] Tag `v0.1`; update Status with Week 1 summary
 
-## Week 2 — the pager, then a microVM
+### Week 2 — the pager, then a microVM
 
-### Day 6 — uffd wrappers + process-level pager
+#### Day 6 — uffd wrappers + process-level pager
+
 Goal: a process's memory is served from B, fault by fault.
 
 `internal/uffd`
+
 - [ ] `Open()` (`UFFD_USER_MODE_ONLY` off; needs sysctl or CAP_SYS_PTRACE — document)
 - [ ] `API()` handshake; `Register(range, MISSING)`; `ReadEvents()`; `Copy(dst, src)`
 - [ ] Unit test with a self-registered region in the test process
 
 `cmd/pager` (`-target process`)
+
 - [ ] Create memfd of `-region MB`; register uffd on it
 - [ ] Spawn `cmd/touch` with memfd inherited (fd 3) and region size in env
 - [ ] Event loop on a `LockOSThread` goroutine: fault → `Get` from memsrv → `Copy`
 - [ ] Preallocated page buffer; zero allocations per fault
 
 `cmd/touch`
+
 - [ ] Static binary; maps fd 3; modes `seq`/`rand`; writes a per-page pattern then verifies
 - [ ] Prints per-access latency percentiles as JSON on stdout
 
 Verify on `local`
+
 - [ ] touch region 256 MB, memsrv 512 MB; completes with zero verify errors
 
 Close
+
 - [ ] Update Status
 
-### Day 7 — eviction + writeback
+#### Day 7 — eviction + writeback
 Goal: working set larger than local budget runs correctly.
 
 `internal/pager`
@@ -480,3 +536,9 @@ Housekeeping
 | Go GC/scheduler on fault path costs > 3 µs | preallocate, `GOGC=off` + `SetMemoryLimit`, `LockOSThread`; revisit only after profiling |
 | thunderbolt-ibverbs doesn't load on our controller | Day 14 fallback; report is still the deliverable |
 | Scope creep into policy work | §7: no policy without a measurement |
+
+## Coding generation rules
+
+- `structs` stay on top part of file (after const), both exported and private
+- when allocated any struct, fields should be one line each
+- also private methods should carry comments

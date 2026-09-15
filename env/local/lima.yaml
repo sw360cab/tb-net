@@ -10,3 +10,14 @@ nestedVirtualization: true
 cpus: 4
 memory: 12GiB
 disk: 40GiB
+# make, so the docker-* targets also work from `limactl shell tbnet`. Go stays
+# in the image only: use `make dev CMD="make test"` for Go commands in the VM.
+provision:
+- mode: system
+  script: |
+    #!/bin/sh
+    set -eu
+    command -v make >/dev/null 2>&1 && exit 0
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get update
+    apt-get install -y --no-install-recommends make

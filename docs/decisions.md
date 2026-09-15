@@ -23,9 +23,28 @@ farbench) runs fine there; the pager (Day 6+) and Firecracker (Day 9) cannot.
 Options:
 
 - a Lima VM with a stock Debian/Ubuntu kernel running its own Docker
-daemon, keeping the same Dockerfile and make targets via `docker context`;
+daemon, keeping the same Dockerfile and make targets (the Makefile sets
+`DOCKER_HOST` when the VM is up);
 - do all pager work directly on the `lan`/`tb` Linux hosts;
 - OrbStack, kernel config unverified.
 
-**Current choice**: Lima can also enable nested virtualization for Firecracker on M3+ Macs with macOS 15.
-Until then `internal/uffd`'s probe skips on ENOSYS instead of failing.
+**Current choice**: Lima (`make vm-up`, `env/local/lima.yaml`). Verified on the
+dev Mac (M4, macOS 15.7): Ubuntu 26.04, kernel 7.0.0-28-generic,
+`CONFIG_USERFAULTFD=y`, and `/dev/kvm` present in the VM and in a `--privileged`
+container (nested virtualization, needed for Firecracker; M3+ with macOS 15).
+The `internal/uffd` probe still skips on ENOSYS, so kernels without userfaultfd
+(Docker Desktop) stay green until Day 6.
+
+## 2026-09-15 — Day 2 wall time on `local`
+
+`cmd/cli0` in netns `fa` against `memsrv -env local` in `fb` (veth, MTU 65520),
+inside the Linux container on the Lima VM on the M4 Mac: one TCP connection,
+synchronous calls, 10k pages each way, every page verified, 3 runs.
+
+- put: 693–858 ms (69–86 µs/page, 45–56 MB/s)
+- get: 772–791 ms (77–79 µs/page, ~50 MB/s)
+- ping: 80–160 µs; memsrv logged `errs=0` for every run
+
+This is a sanity number for veth inside a VM, not a transport measurement: on
+the Mac's own loopback `BenchmarkPut`/`BenchmarkGet` measure ~13 µs and ~24 µs
+per call. No decision follows; farbench (Day 3) takes over measuring.

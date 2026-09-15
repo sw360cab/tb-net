@@ -19,9 +19,9 @@ const (
 
 type uffdioAPIArg struct{ API, Features, Ioctls uint64 }
 
-// TestUserfaultfdAvailable probes the environment, not our code: the pager
-// (Week 2) needs a kernel with userfaultfd and permission to use it (root,
-// CAP_SYS_PTRACE, or vm.unprivileged_userfaultfd=1).
+// TestUserfaultfdAvailable probes the current system environment, not code:
+// the pager needs a kernel with userfaultfd and permission to use it
+// (root, CAP_SYS_PTRACE, vm.unprivileged_userfaultfd=1).
 func TestUserfaultfdAvailable(t *testing.T) {
 	nr, ok := sysUserfaultfd[runtime.GOARCH]
 	if !ok {

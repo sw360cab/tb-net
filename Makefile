@@ -1,7 +1,8 @@
 # farmem — see CLAUDE.md §4
 GO         ?= go
 GOFLAGS    ?=
-PLATFORM   := $(shell $(GO) env GOOS)_$(shell $(GO) env GOARCH)
+# empty without Go (e.g. inside the Lima VM, where only the docker-* targets apply)
+PLATFORM   := $(shell $(GO) env GOOS 2>/dev/null)_$(shell $(GO) env GOARCH 2>/dev/null)
 OUT        ?= out/$(PLATFORM)
 ENV        ?= local
 LINK       ?= tcp
@@ -22,7 +23,7 @@ ifneq ($(wildcard $(VM_SOCK)),)
 export DOCKER_HOST ?= unix://$(VM_SOCK)
 endif
 
-.PHONY: all build test lint lint-fix fmt bench plot env-local-up env-local-down docker-build docker-test docker-bench dev vm-up vm-down clean
+.PHONY: all build test lint lint-fix fmt bench plot env-local-up env-local-down docker-build docker-test docker-bench docker-cli0 dev vm-up vm-down clean
 
 all: build
 
@@ -74,6 +75,11 @@ docker-test: docker-build
 docker-bench: docker-build
 	docker run --rm --privileged -v $(CURDIR):/src $(IMAGE) \
 		make env-local-up bench ENV=$(ENV) LINK=$(LINK) MODE=$(MODE)
+
+# Day 2 check on local: cli0 in netns fa against memsrv in fb, 3 runs
+docker-cli0: docker-build
+	docker run --rm --privileged -v $(CURDIR):/src $(IMAGE) \
+		sh -c 'make -s build && RUNS=3 env/local/run.sh out/$$(go env GOOS)_$$(go env GOARCH)/cli0 -env local'
 
 # Linux root shell on the live source tree, e.g. make dev CMD="make lint"
 dev: docker-build
