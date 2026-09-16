@@ -4,16 +4,15 @@
 # On macOS the daemon is the Lima VM's (make vm-up): Docker Desktop's kernel
 # has no userfaultfd.
 
-FROM golang:1.24.5-bookworm AS base
+FROM golang:1.26.8-bookworm AS base
 RUN apt-get update \
- && apt-get install -y --no-install-recommends iproute2 iputils-ping \
+ && apt-get install -y --no-install-recommends iproute2 iputils-ping python3-matplotlib \
  && rm -rf /var/lib/apt/lists/*
 # bind-mounted repo is owned by the host user; let root's git read it
 RUN git config --system --add safe.directory /src
-# pinned linter; make docker-build passes GOLANGCI_VERSION from the Makefile.
-# GOTOOLCHAIN=auto because the linter needs a newer Go than the project.
+# pinned linter; make docker-build passes GOLANGCI_VERSION from the Makefile
 ARG GOLANGCI_VERSION=v2.13.2
-RUN GOTOOLCHAIN=auto GOBIN=/usr/local/bin \
+RUN GOBIN=/usr/local/bin \
     go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@${GOLANGCI_VERSION} \
  && go clean -cache -modcache
 ENV GOLANGCI=/usr/local/bin/golangci-lint

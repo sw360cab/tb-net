@@ -271,9 +271,7 @@ func TestConcurrentCalls(t *testing.T) {
 	var wg sync.WaitGroup
 	errc := make(chan error, workers)
 	for w := range workers {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			src, dst := make([]byte, PageSize), make([]byte, PageSize)
 			for i := range perWorker {
 				page := uint64(w*perWorker + i) // each worker owns its pages
@@ -291,7 +289,7 @@ func TestConcurrentCalls(t *testing.T) {
 					return
 				}
 			}
-		}()
+		})
 	}
 	wg.Wait()
 	close(errc)

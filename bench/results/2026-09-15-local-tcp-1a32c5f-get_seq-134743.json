@@ -1,0 +1,20 @@
+{
+  "date": "2026-09-15T13:47:43Z",
+  "env": "local",
+  "link": "tcp",
+  "git": "1a32c5f",
+  "mode": "get_seq",
+  "pages": 131072,
+  "mtu": 65520,
+  "lat_us": {
+    "p50": 70.625,
+    "p90": 83.417,
+    "p99": 113,
+    "p999": 149.501,
+    "max": 2643.052
+  },
+  "mbps": 54.2,
+  "faults": 0,
+  "evictions": 0,
+  "prefetch_hits": 0
+}
