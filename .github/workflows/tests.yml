@@ -1,9 +1,9 @@
-name: ci
+name: Basic Tests
 on: [push, pull_request]
 jobs:
   test:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       # compile + vet + lint in docker build, then env/local + tests in --privileged
       - run: make docker-test
