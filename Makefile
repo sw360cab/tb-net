@@ -24,13 +24,17 @@ ifneq ($(wildcard $(VM_SOCK)),)
 export DOCKER_HOST ?= unix://$(VM_SOCK)
 endif
 
-.PHONY: all build test lint lint-fix fmt bench plot env-local-up env-local-down docker-build docker-test docker-bench docker-plot docker-cli0 dev vm-up vm-down clean
+.PHONY: FORCE all build test lint lint-fix fmt bench plot env-local-up env-local-down docker-build docker-test docker-bench docker-plot docker-cli0 dev vm-up vm-down clean
+
+FORCE:
 
 all: build
 
 build: $(CMDS:%=$(OUT)/%)
 
-$(OUT)/%: cmd/% $(shell find . -name '*.go' 2>/dev/null)
+# always hand off to go build: its cache tracks sources, go.mod, the toolchain
+# and flags, which file timestamps don't (a Go upgrade left stale binaries)
+$(OUT)/%: FORCE
 	@mkdir -p $(OUT)
 	CGO_ENABLED=$(CGO_ENABLED) $(GO) build $(GOFLAGS) -o $@ ./cmd/$*
 

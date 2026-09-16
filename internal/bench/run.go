@@ -26,7 +26,7 @@ func ParseModes(s string) ([]string, error) {
 		return slices.Clone(Modes), nil
 	}
 	var modes []string
-	for _, m := range strings.Split(s, ",") {
+	for m := range strings.SplitSeq(s, ",") {
 		if m = strings.TrimSpace(m); !slices.Contains(Modes, m) {
 			return nil, fmt.Errorf("bench: unknown mode %q (have %s, or all)", m, strings.Join(Modes, ", "))
 		}

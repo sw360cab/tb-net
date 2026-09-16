@@ -26,7 +26,7 @@ func Dirty(dir string) ([]string, error) {
 		return nil, err
 	}
 	var changes []string
-	for _, line := range strings.Split(out, "\n") {
+	for line := range strings.SplitSeq(out, "\n") {
 		if line = strings.TrimSpace(line); line != "" {
 			changes = append(changes, line)
 		}

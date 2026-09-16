@@ -8,6 +8,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"maps"
 	"net"
 	"os"
 	"slices"
@@ -41,7 +42,7 @@ func main() {
 
 func run() error {
 	envName := flag.String("env", "", "environment name: dials $ADDR_B:$PORT from env/<name>/env.conf (required)")
-	linkName := flag.String("link", "tcp", "link implementation: "+strings.Join(slices.Sorted(mapKeys(dialers)), ", "))
+	linkName := flag.String("link", "tcp", "link implementation: "+strings.Join(slices.Sorted(maps.Keys(dialers)), ", "))
 	modeFlag := flag.String("mode", "rtt", "comma-separated modes ("+strings.Join(bench.Modes, ", ")+") or all")
 	pages := flag.Uint64("pages", 0, "calls per mode, pages or pings (default: every page of $MEMSRV_MB)")
 	out := flag.String("out", bench.ResultsDir, "directory for result JSON")
@@ -128,14 +129,4 @@ func roundTo(x float64, digits int) float64 {
 		p *= 10
 	}
 	return float64(int64(x*p+0.5)) / p
-}
-
-func mapKeys[K comparable, V any](m map[K]V) func(func(K) bool) {
-	return func(yield func(K) bool) {
-		for k := range m {
-			if !yield(k) {
-				return
-			}
-		}
-	}
 }
