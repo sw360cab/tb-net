@@ -192,6 +192,17 @@ location and unit choices in decisions.
 Open: merge `day3`; CI still not run on GitHub (no remote); TB hardware
 pre-check on both hosts still pending.
 
+
+**2026-09-17 — Day 4: `lan` measured; `tb` waits for the Thunderbolt cable.**
+Shipped: `deploy/push.sh` (linux/amd64 build stamped with the commit, rsync to
+`/opt/ultramem`, role b installs and restarts `memsrv.service`);
+`deploy/memsrv.service`; `env/lan` (Mac A, screwdriver B, direct cable, static
+`10.97.0.1`/`.2`); `env/hosts.md`; rename far* → ultra* (wire magic "umem").
+First `lan` results at 44c9034: p50 350–397 µs, p99 389–594 µs, ~10 MB/s,
+capped by one page per synchronous round trip (see decisions).
+Open: Thunderbolt cable → `thunderbolt0`, `env/tb`, `tb` run. Host steps run
+from iTerm: the VS Code Claude process has no Local Network permission and
+can't reach the LAN.
 ---
 
 ## 8. Three-week plan — 15 sessions × 3–4 h
@@ -309,20 +320,20 @@ Goal: same command runs on `local`, `lan`, `tb`.
 
 `deploy/`
 
-- [ ] `push.sh <host> <role>`: `CGO_ENABLED=0` build, rsync to `/opt/ultramem`, install unit, restart
-- [ ] `memsrv.service` (Restart=always, `LimitMEMLOCK=infinity`)
-- [ ] `env/lan/`, `env/tb/` configs (addresses, interface, MTU, size)
+- [x] `push.sh <host> <role>`: `CGO_ENABLED=0` build, rsync to `/opt/ultramem`, install unit, restart
+- [x] `memsrv.service` (Restart=always, `LimitMEMLOCK=infinity`)
+- [ ] `env/lan/`, `env/tb/` configs (addresses, interface, MTU, size): `lan` done; `tb` waits for the cable
 
 Hosts (show commands before running)
 
 - [ ] `modprobe thunderbolt-net` on one host; confirm `thunderbolt0` on both
 - [ ] `ip link set thunderbolt0 mtu 65520 up` both sides; static IPs from `env/tb`
-- [ ] Record kernel, controller, MTU actually accepted in `env/tb/README.md`
+- [ ] Record kernel, controller, MTU actually accepted in `env/tb/README.md`: screwdriver's kernel and controller are in `env/hosts.md`; MTU needs the cable
 
 Verify
 
-- [ ] ultrabench all modes on `lan` and `tb`; commit results
-- [ ] Numbers into `docs/decisions.md`: RTT and MB/s per env
+- [ ] ultrabench all modes on `lan` and `tb`; commit results: `lan` done at 44c9034; `tb` waits for the cable
+- [ ] Numbers into `docs/decisions.md`: RTT and MB/s per env: `lan` done
 
 Close
 
