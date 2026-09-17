@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-// Result is one farbench run: exactly the CLAUDE.md §6 fields, no more.
+// Result is one ultrabench run: exactly the CLAUDE.md §6 fields, no more.
 type Result struct {
 	Date         string  `json:"date"` // RFC 3339, UTC
 	Env          string  `json:"env"`

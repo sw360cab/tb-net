@@ -1,4 +1,4 @@
-# farmem — far memory over Thunderbolt, in Go
+# ultramem — ultra memory over Thunderbolt, in Go
 
 This file is the project brief and the working agreement for Claude Code.
 Read it fully before doing anything. Keep it updated when decisions change.
@@ -17,7 +17,7 @@ Three deliverables grow in parallel from day 1:
 | Track | Artifact | Purpose |
 |---|---|---|
 | Code | `memsrv`, `pager`, `internal/link` | the system |
-| Bench | `farbench` + `bench/results/` | every version is measured the same way |
+| Bench | `ultrabench` + `bench/results/` | every version is measured the same way |
 | Ops | `deploy/` + `env/` | one command to push and run on any environment |
 
 Non-goals for these 3 weeks: macOS, multi-node, security, production hardening,
@@ -28,7 +28,7 @@ any inference integration. Linux ↔ Linux only.
 - Thunderbolt host-to-host exposes one transport: **XDomain DMA rings**.
   Linux's `thunderbolt-net` builds an Ethernet netdev (`thunderbolt0`) on it,
   MTU up to 65522, 4096-byte frames on the wire.
-- No load/store across hosts. Far memory is **page-granular**, fault-driven.
+- No load/store across hosts. Ultra memory is **page-granular**, fault-driven.
 - Expected cost per 4 KB miss over TB4: ~12 µs (link RTT ~8–10 µs + fault
   overhead). Bandwidth ~2.5–3 GB/s. That is Optane-SSD-class swap. Design for it.
 - Prior art we build on, not against: Infiniswap (design), Firecracker UFFD
@@ -46,7 +46,7 @@ host A                                          host B
                               ▲
                               │ same binary, same protocol
                          ┌────┴─────┐
-                         │ farbench │
+                         │ ultrabench │
                          └──────────┘
 ```
 
@@ -77,10 +77,10 @@ are a flag flip later, not a rewrite.
 ## 4. Repository layout
 
 ```
-farmem/
+ultramem/
   cmd/memsrv/        host B: pinned buffer + serve loop
   cmd/pager/         host A: uffd handler + policy
-  cmd/farbench/      benchmark client (RTT, get/put throughput, guest workload)
+  cmd/ultrabench/      benchmark client (RTT, get/put throughput, guest workload)
   cmd/touch/         static in-guest workload: touch N MB seq/random, print latency pcts
   internal/link/     Link interface + tcp/, rawl2/, verbs/
   internal/proto/    header encode/decode + tests
@@ -121,7 +121,7 @@ kernel ≥ 6.6, `thunderbolt-net` loaded, `ip link set thunderbolt0 mtu 65520`,
 
 ## 6. Benchmark contract
 
-`farbench` writes one JSON per run to `bench/results/`. Fields are fixed from
+`ultrabench` writes one JSON per run to `bench/results/`. Fields are fixed from
 day 3 onward so results stay comparable across all versions:
 
 ```json
@@ -184,8 +184,8 @@ pre-check on both hosts still pending.
 **2026-09-15 — Day 3 done, on branch `day3`.**
 Shipped: `internal/bench` (nearest-rank percentiles, §6 `Result` writer, git
 commit and dirty checks, `rtt`/`get_seq`/`get_rand`/`put_seq` runners) with
-tests; `cmd/farbench`; `bench/plot.py` → `bench/plots/<mode>.png`;
-`make docker-bench` (farbench in `fa` vs memsrv in `fb` via `env/local/run.sh`)
+tests; `cmd/ultrabench`; `bench/plot.py` → `bench/plots/<mode>.png`;
+`make docker-bench` (ultrabench in `fa` vs memsrv in `fb` via `env/local/run.sh`)
 and `make docker-plot`. First results at 1a32c5f, local/tcp: p50 ~69–71 µs,
 p99 ~111–129 µs, ~55 MB/s for every mode (VM veth baseline). Filename, plots
 location and unit choices in decisions.
@@ -273,11 +273,11 @@ Close
 
 - [x] Commit, CI green, update Status
 
-#### Day 3 — farbench v1
+#### Day 3 — ultrabench v1
 
 Goal: one command produces a comparable JSON result.
 
-`cmd/farbench`
+`cmd/ultrabench`
 
 - [x] Flags: `-env`, `-link`, `-mode` (comma list or `all`), `-pages`, `-out bench/results/`
 - [x] Modes `rtt`, `get_seq`, `get_rand`, `put_seq`
@@ -309,7 +309,7 @@ Goal: same command runs on `local`, `lan`, `tb`.
 
 `deploy/`
 
-- [ ] `push.sh <host> <role>`: `CGO_ENABLED=0` build, rsync to `/opt/farmem`, install unit, restart
+- [ ] `push.sh <host> <role>`: `CGO_ENABLED=0` build, rsync to `/opt/ultramem`, install unit, restart
 - [ ] `memsrv.service` (Restart=always, `LimitMEMLOCK=infinity`)
 - [ ] `env/lan/`, `env/tb/` configs (addresses, interface, MTU, size)
 
@@ -321,7 +321,7 @@ Hosts (show commands before running)
 
 Verify
 
-- [ ] farbench all modes on `lan` and `tb`; commit results
+- [ ] ultrabench all modes on `lan` and `tb`; commit results
 - [ ] Numbers into `docs/decisions.md`: RTT and MB/s per env
 
 Close
@@ -410,7 +410,7 @@ Close
 
 Goal: pager numbers on all three envs.
 
-`cmd/farbench`
+`cmd/ultrabench`
 
 - [ ] Modes `guest_seq`, `guest_rand`: launch pager+touch, collect touch JSON, merge with pager counters
 - [ ] Flags `-region`, `-resident` pass through
@@ -465,7 +465,7 @@ Decide (in `docs/decisions.md`, with a recommendation)
 
 Measure
 
-- [ ] Copy `cmd/touch` into the rootfs; run `guest_seq`/`guest_rand` inside the VM via farbench
+- [ ] Copy `cmd/touch` into the rootfs; run `guest_seq`/`guest_rand` inside the VM via ultrabench
 - [ ] Commit results
 
 Close
@@ -493,7 +493,7 @@ Tests
 
 Verify on `tb`
 
-- [ ] farbench `rtt`, `get_*`, `put_seq` with `-link rawl2`; commit next to tcp
+- [ ] ultrabench `rtt`, `get_*`, `put_seq` with `-link rawl2`; commit next to tcp
 
 Close
 
@@ -520,7 +520,7 @@ Close
 
 #### Day 13 — XDomain exploration (read-only day)
 
-Goal: know what the raw path offers on our hardware. No farmem code changes.
+Goal: know what the raw path offers on our hardware. No ultramem code changes.
 
 Read (write `docs/xdomain.md`)
 
@@ -548,7 +548,7 @@ If Day 13 produced a working device
 - [ ] `internal/link/verbs`: cgo over libibverbs behind `//go:build verbs`
 - [ ] RC queue pair; `Get` = one-sided READ, `Put` = WRITE + immediate for ack
 - [ ] memsrv registers its buffer as an MR; exchange rkey over the tcp link at startup
-- [ ] farbench `rtt`, `get_*` on `tb`; commit
+- [ ] ultrabench `rtt`, `get_*` on `tb`; commit
 
 If it did not
 

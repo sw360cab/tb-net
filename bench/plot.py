@@ -65,13 +65,13 @@ def plot_mode(mode, runs):
         fmt.set_scientific(False)
         axis(fmt)
     lat.set_ylabel("latency per call (µs)")
-    lat.set_title(f"farbench {mode}: latency")
+    lat.set_title(f"ultrabench {mode}: latency")
     lat.legend(fontsize=8)
     lat.grid(True, which="both", alpha=0.3)
     if thr is not None:
         thr.set_ylabel("MB/s")
         thr.set_ylim(bottom=0)
-        thr.set_title(f"farbench {mode}: throughput")
+        thr.set_title(f"ultrabench {mode}: throughput")
         thr.legend(fontsize=8)
         thr.grid(True, alpha=0.3)
     for ax in axes[0]:

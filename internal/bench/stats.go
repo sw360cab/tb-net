@@ -1,6 +1,6 @@
 // Package bench measures a link.Link and writes results in the CLAUDE.md §6
 // format: one JSON per run, with fields fixed so runs stay comparable across
-// versions. cmd/farbench wraps it.
+// versions. cmd/ultrabench wraps it.
 package bench
 
 import (

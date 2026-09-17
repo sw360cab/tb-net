@@ -1,6 +1,6 @@
 // Command cli0 is the Day 2 ad-hoc client: it Puts N pages to a memsrv,
 // Gets them back, verifies them and prints wall time (CLAUDE.md Day 2,
-// "Verify on local"). farbench (Day 3) replaces it.
+// "Verify on local"). ultrabench (Day 3) replaces it.
 package main
 
 import (

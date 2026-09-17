@@ -1,4 +1,4 @@
-# farmem — see CLAUDE.md §4
+# ultramem — see CLAUDE.md §4
 GO         ?= go
 GOFLAGS    ?=
 # empty without Go (e.g. inside the Lima VM, where only the docker-* targets apply)
@@ -57,7 +57,7 @@ fmt:
 	$(GO) fmt ./...
 
 bench: build
-	$(OUT)/farbench -env $(ENV) -link $(LINK) -mode $(MODE) -out bench/results/
+	$(OUT)/ultrabench -env $(ENV) -link $(LINK) -mode $(MODE) -out bench/results/
 
 plot:
 	python3 bench/plot.py
@@ -75,12 +75,12 @@ docker-build:
 docker-test: docker-build
 	docker run --rm --privileged $(IMAGE)
 
-# farbench in netns fa against memsrv in fb, on the live tree: .git for the
+# ultrabench in netns fa against memsrv in fb, on the live tree: .git for the
 # commit and dirty check, and bench/results/ lands on the host. Commit first.
 #   make docker-bench MODE=get_seq,get_rand PAGES=65536
 docker-bench: docker-build
 	docker run --rm --privileged -v $(CURDIR):/src $(IMAGE) \
-		sh -c 'make -s build && env/local/run.sh out/$$(go env GOOS)_$$(go env GOARCH)/farbench \
+		sh -c 'make -s build && env/local/run.sh out/$$(go env GOOS)_$$(go env GOARCH)/ultrabench \
 			-env local -link $(LINK) -mode $(MODE) $(if $(PAGES),-pages $(PAGES))'
 
 # bench/results/*.json -> bench/plots/<mode>.png, with the image's matplotlib

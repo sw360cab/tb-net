@@ -3,7 +3,7 @@
 Hardware facts for the machines behind the envs; env READMEs point here.
 Record what was measured and when, not what the spec sheet promises.
 
-## screwdriver: Linux, host A (farbench now, pager later)
+## screwdriver: Linux, host A (ultrabench now, pager later)
 
 Checked 2026-09-16. ssh alias `screwdriver`.
 

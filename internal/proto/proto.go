@@ -1,4 +1,4 @@
-// Package proto defines the farmem wire protocol: a fixed 32-byte,
+// Package proto defines the ultramem wire protocol: a fixed 32-byte,
 // little-endian header, optionally followed by a page payload.
 package proto
 
@@ -12,8 +12,8 @@ import (
 // HeaderSize is the encoded size of a Header on the wire.
 const HeaderSize = 32
 
-// Magic identifies a farmem frame. Little-endian on the wire it reads "fmem".
-const Magic uint32 = 0x6d656d66
+// Magic identifies an ultramem frame. Little-endian on the wire it reads "umem".
+const Magic uint32 = 0x6d656d75
 
 // PageShift4K is the page shift for 4 KB pages, the only size used today.
 const PageShift4K = 12

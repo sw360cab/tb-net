@@ -19,7 +19,7 @@ Docker Desktop's LinuxKit kernel (6.10.14, arm64) is built with
 `# CONFIG_USERFAULTFD is not set`: the syscall returns ENOSYS even in a
 `--privileged` container, and there is no `/dev/kvm`.
 Week 1 (netns, tcp link,
-farbench) runs fine there; the pager (Day 6+) and Firecracker (Day 9) cannot.
+ultrabench) runs fine there; the pager (Day 6+) and Firecracker (Day 9) cannot.
 Options:
 
 - a Lima VM with a stock Debian/Ubuntu kernel running its own Docker
@@ -47,15 +47,15 @@ synchronous calls, 10k pages each way, every page verified, 3 runs.
 
 This is a sanity number for veth inside a VM, not a transport measurement: on
 the Mac's own loopback `BenchmarkPut`/`BenchmarkGet` measure ~13 µs and ~24 µs
-per call. No decision follows; farbench (Day 3) takes over measuring.
+per call. No decision follows; ultrabench (Day 3) takes over measuring.
 
-## 2026-09-15 — farbench v1: what a result means
+## 2026-09-15 — ultrabench v1: what a result means
 
 The §6 fields stay as specified; these choices fill the gaps around them.
 
 - **File names:** §4's `YYYY-MM-DD-<env>-<link>-<git>.json` collides between
   the modes, and Day 12's repeats, of one commit. Names are now
-  `YYYY-MM-DD-<env>-<link>-<git>-<mode>-<HHMMSS>.json`, and farbench never
+  `YYYY-MM-DD-<env>-<link>-<git>-<mode>-<HHMMSS>.json`, and ultrabench never
   overwrites a file.
 - **Plots:** `.gitignore` excludes `bench/*.png`, yet Day 3 says "commit
   results + PNG". Plots go to `bench/plots/<mode>.png`, which is committed. The
@@ -70,7 +70,7 @@ The §6 fields stay as specified; these choices fill the gaps around them.
   The get modes Put every page untimed first, so reads return written data.
   `get_rand` visits each page once in a fixed-seed order, so every run and
   version reads the same sequence. `-mode` takes a comma list or `all`.
-- **Dirty check:** untracked files count, `bench/results/` does not. farbench
+- **Dirty check:** untracked files count, `bench/results/` does not. ultrabench
   checks before measuring, so a dirty tree fails in milliseconds, not minutes.
 
 First run, `make docker-bench` at 1a32c5f (local, tcp, 131072 calls per mode;

@@ -1,4 +1,4 @@
-// Command farbench measures a link against memsrv and writes one CLAUDE.md §6
+// Command ultrabench measures a link against memsrv and writes one CLAUDE.md §6
 // JSON per mode to -out. It refuses to run on a dirty working tree, so every
 // result maps to a commit.
 package main
@@ -24,7 +24,7 @@ import (
 
 // commit is the source commit, stamped by deploy/push.sh with
 // -ldflags "-X main.commit=<sha>" ("<sha>-dirty" for uncommitted changes).
-// Empty when built in the repository, where farbench asks git instead.
+// Empty when built in the repository, where ultrabench asks git instead.
 var commit string
 
 // dialers are the -link implementations; rawl2 and verbs join in Week 3.
@@ -40,7 +40,7 @@ var dialers = map[string]func(ctx context.Context, addr string) (link.Link, erro
 
 func main() {
 	if err := run(); err != nil {
-		fmt.Fprintln(os.Stderr, "farbench:", err)
+		fmt.Fprintln(os.Stderr, "ultrabench:", err)
 		os.Exit(1)
 	}
 }
@@ -96,7 +96,7 @@ func run() error {
 		return err
 	}
 	defer l.Close()
-	fmt.Printf("farbench %s: env %s, link %s, memsrv %s, %d calls per mode\n", sha, *envName, *linkName, addr, *pages)
+	fmt.Printf("ultrabench %s: env %s, link %s, memsrv %s, %d calls per mode\n", sha, *envName, *linkName, addr, *pages)
 
 	for _, mode := range modes {
 		ctx, cancel := context.WithTimeout(context.Background(), *timeout)
