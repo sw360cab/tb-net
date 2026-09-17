@@ -1,0 +1,40 @@
+#!/bin/sh
+# Build farmem for a Linux host, copy it to /opt/farmem and, for role b,
+# (re)start memsrv.service (CLAUDE.md Day 4).
+#
+#   deploy/push.sh <host> <a|b>
+#
+# Binaries are stamped with the commit so farbench can attribute results
+# outside the repository; a dirty tree stamps <sha>-dirty, which farbench
+# refuses to measure with. GOARCH defaults to amd64 (screwdriver).
+set -eu
+usage() { echo "usage: $0 <host> <a|b>" >&2; exit 2; }
+[ $# -eq 2 ] || usage
+host=$1 role=$2
+case $role in a | b) ;; *) usage ;; esac
+cd "$(dirname "$0")/.."
+
+commit=$(git rev-parse --short HEAD)
+[ -z "$(git status --porcelain -- . ':(exclude)bench/results')" ] || commit=$commit-dirty
+
+out=out/push
+rm -rf "$out"
+mkdir -p "$out/bin"
+for b in farbench cli0 memsrv; do
+	GOOS=linux GOARCH=${GOARCH:-amd64} CGO_ENABLED=0 go build -trimpath \
+		-ldflags "-X main.commit=$commit" -o "$out/bin/$b" "./cmd/$b"
+done
+cp -R env "$out/"
+
+echo "push: $commit -> $host:/opt/farmem (role $role)"
+rsync -a --delete "$out/" "$host:farmem/"
+case $role in
+a) ssh -t "$host" 'sudo rsync -a --delete farmem/ /opt/farmem/' ;;
+b)
+	rsync -a deploy/memsrv.service "$host:farmem/"
+	ssh -t "$host" 'sudo rsync -a --delete farmem/ /opt/farmem/ &&
+		sudo install -m 0644 /opt/farmem/memsrv.service /etc/systemd/system/ &&
+		sudo systemctl daemon-reload && sudo systemctl enable memsrv && sudo systemctl restart memsrv &&
+		systemctl --no-pager --lines=5 status memsrv'
+	;;
+esac

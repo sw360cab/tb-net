@@ -271,7 +271,7 @@ Verify on `local`
 
 Close
 
-- [ ] Commit, CI green, update Status
+- [x] Commit, CI green, update Status
 
 #### Day 3 — farbench v1
 
@@ -382,9 +382,11 @@ Close
 - [ ] Update Status
 
 #### Day 7 — eviction + writeback
+
 Goal: working set larger than local budget runs correctly.
 
 `internal/pager`
+
 - [ ] Page table: resident set, CLOCK hand, per-page reference bit
 - [ ] `-resident MB` budget; on fault above budget → pick victim
 - [ ] Writeback queue (bounded channel, N workers): `Put` victim to B, then hole-punch memfd
@@ -392,150 +394,188 @@ Goal: working set larger than local budget runs correctly.
 - [ ] Counters: faults, evictions, writeback queue depth
 
 Tests
+
 - [ ] CLOCK unit tests: victim choice, reference bit clearing
 - [ ] Integration: region 2× budget, seq and rand, verify pattern intact
 
 Verify on `local`
+
 - [ ] faults/evictions match expectation for seq (≈ region/4K each) within 5 %
 
 Close
+
 - [ ] Update Status
 
-### Day 8 — guest modes + measure
+#### Day 8 — guest modes + measure
+
 Goal: pager numbers on all three envs.
 
 `cmd/farbench`
+
 - [ ] Modes `guest_seq`, `guest_rand`: launch pager+touch, collect touch JSON, merge with pager counters
 - [ ] Flags `-region`, `-resident` pass through
 
 Measure
+
 - [ ] Run both modes on `local`, `lan`, `tb`; commit
 - [ ] If `tb` p50 miss > 20 µs: `pprof` the pager, check allocs/fault, `GOGC`, thread pinning — record findings before changing anything
 - [ ] Add sequential prefetch (next 8 pages) only if profile shows RTT-bound; re-measure
 
 Close
+
 - [ ] Update Status
 
-### Day 9 — microVM, fetch only
+#### Day 9 — microVM, fetch only
+
 Goal: a Firecracker guest boots with its RAM served from B.
 
 Investigate (write answers in `docs/firecracker.md`)
+
 - [ ] Firecracker version installed; uffd handler socket protocol (what it sends: uffd fd + region list)
 - [ ] Is guest memory an anonymous private mapping or a shareable memfd in this version?
 - [ ] Which events besides PAGEFAULT must be handled (REMOVE on balloon?)
 
 `cmd/pager` (`-target firecracker -sock path`)
+
 - [ ] Unix socket listener; receive fd + JSON regions; register handler
 - [ ] Serve MISSING faults with `Get` from memsrv (memsrv pre-loaded with the snapshot `.mem` file via a `memsrv -load` flag)
 
 `deploy/firecracker/`
+
 - [ ] Minimal kernel + rootfs; `boot.sh`, `snapshot.sh`, `restore-uffd.sh`
 
 Verify on `local`
+
 - [ ] Guest restores to a shell; every page came through the pager (faults ≈ touched pages)
 
 Close
+
 - [ ] Update Status
 
-### Day 10 — VM eviction decision + `v0.2`
+#### Day 10 — VM eviction decision + `v0.2`
+
 Goal: decide how VM pages are evicted; tag Week 2.
 
 Decide (in `docs/decisions.md`, with a recommendation)
+
 - [ ] (a) Firecracker guest memory as memfd the pager can hole-punch — config only?
 - [ ] (b) Cloud Hypervisor `shared=on` file backing — config only?
 - [ ] (c) defer VM eviction; process-level pager remains the eviction testbed
 - [ ] Implement (a) or (b) only if it needs no VMM fork
 
 Measure
+
 - [ ] Copy `cmd/touch` into the rootfs; run `guest_seq`/`guest_rand` inside the VM via farbench
 - [ ] Commit results
 
 Close
+
 - [ ] Half-page "what we learned" in `docs/week2.md`
 - [ ] Tag `v0.2`; update Status
 
-## Week 3 — below the network stack
+### Week 3 — below the network stack
 
-### Day 11 — rawl2 link
+#### Day 11 — rawl2 link
+
 Goal: same benchmark, no IP.
 
 `internal/link/rawl2`
+
 - [ ] AF_PACKET SOCK_RAW, EtherType `0x88B5`, bound to `-iface`
 - [ ] Frame = proto header + up to (MTU − 14 − 32) payload; 4 KB always fits at MTU 65520
 - [ ] Sequence numbers; credit window of `-window` frames; retransmit after `-rto`
 - [ ] Pure Go via `x/sys/unix`; requires `CAP_NET_RAW` — document in `env/tb/README.md`
 
 Tests
+
 - [ ] Loopback test on a veth pair in `local` (no IP configured)
 - [ ] Drop-injection test: randomly drop 1 % of frames in a test hook; transfers still verify
 
 Verify on `tb`
+
 - [ ] farbench `rtt`, `get_*`, `put_seq` with `-link rawl2`; commit next to tcp
 
 Close
+
 - [ ] Update Status
 
-### Day 12 — compare and decide
+#### Day 12 — compare and decide
+
 Goal: a written verdict on tcp vs rawl2.
 
 Measure
+
 - [ ] Every mode, both links, `tb`, three repeats each; commit
 - [ ] `make plot`; PNGs committed
 
 Decide (`docs/decisions.md`)
+
 - [ ] If rawl2 < 20 % better on the miss path: stop investing; keep as optional link
 - [ ] If syscalls dominate the profile: add `PACKET_MMAP` TPACKET_v3 receive ring, re-measure
 - [ ] Record per-miss time breakdown: fault entry, link RTT, copy, resume
 
 Close
+
 - [ ] Update Status
 
-### Day 13 — XDomain exploration (read-only day)
+#### Day 13 — XDomain exploration (read-only day)
+
 Goal: know what the raw path offers on our hardware. No farmem code changes.
 
 Read (write `docs/xdomain.md`)
+
 - [ ] `drivers/thunderbolt/dma_test.c`: service registration, ring alloc, HopID/paths — what a minimal service driver needs
 - [ ] `hellas-ai/thunderbolt-ibverbs`: supported controllers, build steps, known quirks (E2E ring limits)
 - [ ] Our controllers on A and B (`lspci`, `/sys/bus/thunderbolt`): are they on the supported list?
 
 Try (show commands; wait for approval)
+
 - [ ] Build thunderbolt-ibverbs against the running kernel on both hosts
 - [ ] Load; confirm `usb4_rdma*` in `ibv_devices`
 - [ ] Run its perftest for RTT and bandwidth; record numbers
 
 Close
+
 - [ ] `docs/xdomain.md` ends with: works / does not work / partially, and expected RTT
 - [ ] Update Status
 
-### Day 14 — verbs link (exploratory)
+#### Day 14 — verbs link (exploratory)
+
 Goal: a benchmark result for the raw path, even if the result is "could not run".
 
 If Day 13 produced a working device
+
 - [ ] `internal/link/verbs`: cgo over libibverbs behind `//go:build verbs`
 - [ ] RC queue pair; `Get` = one-sided READ, `Put` = WRITE + immediate for ack
 - [ ] memsrv registers its buffer as an MR; exchange rkey over the tcp link at startup
 - [ ] farbench `rtt`, `get_*` on `tb`; commit
 
 If it did not
+
 - [ ] Minimal service module from `dma_test.c`: register service UUID, one TX/RX ring, char device with write→send / read→recv
 - [ ] Measure ring round trip with a C ping-pong; record in `docs/xdomain.md`
 
 Close
+
 - [ ] Update Status
 
-### Day 15 — close out
+#### Day 15 — close out
+
 Goal: `v0.3` and a report someone else could act on.
 
 Results
+
 - [ ] Final table env × link × mode from `bench/results/`; regenerate plots
 - [ ] Per-miss breakdown for the best link
 
 Report (`docs/report.md`, one page)
+
 - [ ] Which link to keep and why
 - [ ] What limits the miss path now
 - [ ] Next 3 weeks: 2 MB pages, WP-based dirty tracking, VM eviction, macOS side, inference cold-KV tier
 
 Housekeeping
+
 - [ ] Replace estimates in §2 with measured numbers
 - [ ] Tag `v0.3`; update Status
 

@@ -22,6 +22,11 @@ import (
 	"github.com/sw360cab/tb-net/internal/link/tcp"
 )
 
+// commit is the source commit, stamped by deploy/push.sh with
+// -ldflags "-X main.commit=<sha>" ("<sha>-dirty" for uncommitted changes).
+// Empty when built in the repository, where farbench asks git instead.
+var commit string
+
 // dialers are the -link implementations; rawl2 and verbs join in Week 3.
 var dialers = map[string]func(ctx context.Context, addr string) (link.Link, error){
 	"tcp": func(ctx context.Context, addr string) (link.Link, error) {
@@ -62,15 +67,7 @@ func run() error {
 	}
 
 	// results must map to a commit: check before spending minutes measuring
-	changes, err := bench.Dirty(".")
-	if err != nil {
-		return err
-	}
-	if len(changes) > 0 {
-		return fmt.Errorf("working tree has uncommitted changes; commit them so results map to a commit:\n  %s",
-			strings.Join(changes, "\n  "))
-	}
-	sha, err := bench.Commit(".")
+	sha, err := bench.SourceCommit(commit, ".")
 	if err != nil {
 		return err
 	}
