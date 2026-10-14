@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 220" width="900" height="220" role="img"
+     aria-label="A small VM asks for 16 GB of RAM; a bigger machine sends 4 KB pages over a Thunderbolt cable">
+  <style>
+    .t  { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; fill: #334155; }
+    .lbl{ font-size: 13px; fill: #64748b; }
+    .big{ font-size: 17px; font-weight: 700; }
+    .sm { font-size: 11px; fill: #475569; }
+    .box{ fill: #ffffff; stroke: #94a3b8; stroke-width: 2; }
+    .bub{ fill: #fef9c3; stroke: #eab308; stroke-width: 2; }
+    .pg { fill: #bae6fd; stroke: #0284c7; stroke-width: 1.5; }
+  </style>
+  <rect x="1" y="1" width="898" height="218" rx="14" fill="#f8fafc" stroke="#e2e8f0" stroke-width="2"/>
+
+  <!-- host A: the hungry little one -->
+  <rect class="box" x="40" y="70" width="190" height="110" rx="12"/>
+  <circle cx="95" cy="112" r="9" fill="#ffffff" stroke="#334155" stroke-width="2"/>
+  <circle cx="155" cy="112" r="9" fill="#ffffff" stroke="#334155" stroke-width="2"/>
+  <circle cx="99" cy="114" r="4" fill="#334155"/>
+  <circle cx="159" cy="114" r="4" fill="#334155"/>
+  <path d="M104 150 q26 -16 46 -2" fill="none" stroke="#334155" stroke-width="3" stroke-linecap="round"/>
+  <text class="t lbl" x="135" y="202" text-anchor="middle">host A · microVM</text>
+  <text class="t sm" x="135" y="172" text-anchor="middle">4 GB, honest</text>
+
+  <g>
+    <rect class="bub" x="22" y="12" width="196" height="36" rx="18"/>
+    <path d="M86 46 l10 16 l12 -16 z" fill="#fef9c3" stroke="#eab308" stroke-width="2"/>
+    <path d="M87 47 h32" stroke="#fef9c3" stroke-width="3"/>
+    <text class="t big" x="120" y="36" text-anchor="middle">I need 16 GB</text>
+  </g>
+
+  <!-- the cable -->
+  <path d="M232 125 H668" stroke="#0284c7" stroke-width="5" stroke-linecap="round"/>
+  <text class="t sm" x="450" y="112" text-anchor="middle">thunderbolt · 40 Gb/s</text>
+  <text class="t sm" x="450" y="163" text-anchor="middle">4 KB per page fault, target ~12 µs</text>
+
+  <!-- pages travelling B -> A -->
+  <g>
+    <rect class="pg" x="300" y="131" width="26" height="20" rx="3"/>
+    <rect class="pg" x="430" y="131" width="26" height="20" rx="3"/>
+    <rect class="pg" x="560" y="131" width="26" height="20" rx="3"/>
+    <text class="t" x="313" y="145" text-anchor="middle" font-size="9" fill="#075985">4K</text>
+    <text class="t" x="443" y="145" text-anchor="middle" font-size="9" fill="#075985">4K</text>
+    <text class="t" x="573" y="145" text-anchor="middle" font-size="9" fill="#075985">4K</text>
+    <path d="M290 141 l-14 0 m6 -5 l-7 5 l7 5" fill="none" stroke="#0284c7" stroke-width="2" stroke-linecap="round"/>
+  </g>
+
+  <!-- host B: the generous one -->
+  <rect class="box" x="670" y="70" width="190" height="110" rx="12"/>
+  <circle cx="725" cy="112" r="9" fill="#ffffff" stroke="#334155" stroke-width="2"/>
+  <circle cx="785" cy="112" r="9" fill="#ffffff" stroke="#334155" stroke-width="2"/>
+  <circle cx="721" cy="114" r="4" fill="#334155"/>
+  <circle cx="781" cy="114" r="4" fill="#334155"/>
+  <path d="M728 140 q27 24 54 0" fill="none" stroke="#334155" stroke-width="3" stroke-linecap="round"/>
+  <text class="t lbl" x="765" y="202" text-anchor="middle">host B · memsrv</text>
+  <text class="t sm" x="765" y="172" text-anchor="middle">32 GB, mostly idle</text>
+
+  <g>
+    <rect class="bub" x="684" y="12" width="196" height="36" rx="18"/>
+    <path d="M806 46 l10 16 l12 -16 z" fill="#fef9c3" stroke="#eab308" stroke-width="2"/>
+    <path d="M807 47 h32" stroke="#fef9c3" stroke-width="3"/>
+    <text class="t big" x="782" y="36" text-anchor="middle">take mine</text>
+  </g>
+</svg>
