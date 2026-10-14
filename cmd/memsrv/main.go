@@ -1,5 +1,5 @@
 // Command memsrv lends this host's RAM: it locks a buffer and serves 4 KB
-// pages from it over the farmem protocol (host B, CLAUDE.md §1).
+// pages from it over the ultramem protocol (host B, CLAUDE.md §1).
 //
 // Flags override the -env file, which overrides the built-in defaults.
 package main

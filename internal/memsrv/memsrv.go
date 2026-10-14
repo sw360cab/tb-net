@@ -1,5 +1,5 @@
 // Package memsrv serves 4 KB pages of a memory buffer over the proto wire
-// protocol: the host B side of farmem (CLAUDE.md §1). cmd/memsrv wraps it.
+// protocol: the host B side of ultramem (CLAUDE.md §1). cmd/memsrv wraps it.
 package memsrv
 
 import (
@@ -32,7 +32,7 @@ type Config struct {
 // Server owns the page buffer and the connections that read and write it.
 //
 // Access to a page is not synchronized across connections: two connections
-// writing the same page at once can leave it torn. farmem runs one pager per
+// writing the same page at once can leave it torn. ultramem runs one pager per
 // memsrv, so this is by design.
 type Server struct {
 	mem   []byte

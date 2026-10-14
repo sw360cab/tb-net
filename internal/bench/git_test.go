@@ -79,6 +79,29 @@ func TestDirty(t *testing.T) {
 	}
 }
 
+func TestSourceCommit(t *testing.T) {
+	notRepo := t.TempDir() // a stamped binary never looks at git
+	if got, err := SourceCommit("abc1234", notRepo); err != nil || got != "abc1234" {
+		t.Errorf("stamped: got %q, %v; want abc1234", got, err)
+	}
+	if _, err := SourceCommit("abc1234-dirty", notRepo); err == nil {
+		t.Error("dirty stamp: no error")
+	}
+
+	clean := repo(t)
+	head, err := Commit(clean)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, err := SourceCommit("", clean); err != nil || got != head {
+		t.Errorf("unstamped, clean repo: got %q, %v; want %s", got, err, head)
+	}
+	write(t, clean, "main.go", "package main // edited\n")
+	if _, err := SourceCommit("", clean); err == nil {
+		t.Error("unstamped, dirty repo: no error")
+	}
+}
+
 func TestNotARepo(t *testing.T) {
 	if _, err := exec.LookPath("git"); err != nil {
 		t.Skip("git not installed")

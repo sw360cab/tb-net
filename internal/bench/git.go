@@ -11,6 +11,28 @@ import (
 // ignores it: a run's own output must not block the next run.
 const ResultsDir = "bench/results"
 
+// SourceCommit returns the commit results can be attributed to. A binary
+// built by deploy/push.sh carries it as stamped; a stamp ending in "-dirty"
+// means it was built from uncommitted changes, which is an error. Without a
+// stamp, the repository at dir must be clean and its HEAD is used.
+func SourceCommit(stamped, dir string) (string, error) {
+	switch {
+	case strings.HasSuffix(stamped, "-dirty"):
+		return "", fmt.Errorf("bench: binary built from uncommitted changes (%s); commit and push again to measure", stamped)
+	case stamped != "":
+		return stamped, nil
+	}
+	changes, err := Dirty(dir)
+	if err != nil {
+		return "", err
+	}
+	if len(changes) > 0 {
+		return "", fmt.Errorf("bench: working tree has uncommitted changes; commit them so results map to a commit:\n  %s",
+			strings.Join(changes, "\n  "))
+	}
+	return Commit(dir)
+}
+
 // Commit returns the short HEAD commit of the repository at dir.
 func Commit(dir string) (string, error) {
 	out, err := git(dir, "rev-parse", "--short", "HEAD")

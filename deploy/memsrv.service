@@ -1,0 +1,18 @@
+# memsrv on the memory host (CLAUDE.md Day 4), installed by `deploy/push.sh <host> b`.
+# -env is the pair this host serves in: ADDR_B there must be this host's address.
+[Unit]
+Description=ultramem memsrv: lends this host's RAM as pages
+Wants=network-online.target
+After=network-online.target
+# keep retrying while ADDR_B isn't configured yet, instead of giving up after 5 fails
+StartLimitIntervalSec=0
+
+[Service]
+WorkingDirectory=/opt/ultramem
+ExecStart=/opt/ultramem/bin/memsrv -env lan
+Restart=always
+RestartSec=2
+LimitMEMLOCK=infinity
+
+[Install]
+WantedBy=multi-user.target
